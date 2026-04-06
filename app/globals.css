@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sift-gold: #b8860b;
+  --color-sift-gold-light: #d4a017;
+  --color-sift-gold-dark: #8b6508;
+
+  --color-surface-light: #faf9f6;
+  --color-surface-light-card: #ffffff;
+  --color-surface-dark: #141414;
+  --color-surface-dark-card: #1a1808;
+
+  --color-border-light: #e0ddd5;
+  --color-border-dark: #2a2a2a;
+
+  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto,
+    Oxygen-Sans, Ubuntu, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-surface-light text-gray-800 dark:bg-surface-dark dark:text-gray-200;
+    font-variant-numeric: tabular-nums;
+  }
+}
