@@ -6,6 +6,7 @@ import { SiftResult, SiftError } from "@/lib/parser/types";
 import { SourceBar } from "@/components/result/SourceBar";
 import { ArticleBody } from "@/components/result/ArticleBody";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/auth/UserMenu";
 import Link from "next/link";
 
 function SiftContent() {
@@ -77,7 +78,10 @@ function SiftContent() {
           <Link href="/" className="text-sift-gold hover:text-sift-gold-dark font-semibold text-sm flex items-center gap-1">
             <span>&larr;</span> Sift
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <UserMenu />
+            <ThemeToggle />
+          </div>
         </div>
         <SourceBar domain={result.sourceDomain} url={result.sourceUrl} siftedAt={result.siftedAt} fetchTimeMs={result.fetchTimeMs} />
         <ArticleBody
