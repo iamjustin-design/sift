@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SessionWrapper } from "@/components/auth/SessionWrapper";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +32,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+        <SessionWrapper>
+          <ThemeProvider>{children}</ThemeProvider>
+        </SessionWrapper>
       </body>
     </html>
   );
