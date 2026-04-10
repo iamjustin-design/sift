@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-10
 **Status:** Design
-**Domain:** bitsift.com (pending setup)
+**Domain:** bitsift.app (pending setup)
 
 ## Overview
 
@@ -14,7 +14,7 @@ Rebrand from "Sift" to **BitSift**. Transform the static URL-in/article-out tool
 
 - **Product name:** BitSift (one word, camelCase in display: BitSift)
 - **Bot name:** BitSift Bot (the mascot/assistant personality)
-- **Domain:** bitsift.com
+- **Domain:** bitsift.app
 - **Public-facing:** All UI, meta tags, tab titles, logos, and copy display "BitSift" — never "Sift" alone
 - **Mascot:** Placeholder sieve/strainer character for now (Nico will design the real character, converted to SVG)
 - **Color palette:** Unchanged — sift-gold (#b8860b), surface-light (#faf9f6), surface-dark (#141414), etc.
