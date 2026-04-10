@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionWrapper } from "@/components/auth/SessionWrapper";
+import { SiftBotProvider } from "@/lib/bot/context";
+import { SiftBot } from "@/components/bot/SiftBot";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Sift — Sifting bits from bytes",
+  title: "BitSift — Sifting bits from bytes",
   description: "Strip the clutter from any webpage. Get clean, readable content with AI detection.",
 };
 
@@ -33,7 +35,12 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <SessionWrapper>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <SiftBotProvider>
+              {children}
+              <SiftBot />
+            </SiftBotProvider>
+          </ThemeProvider>
         </SessionWrapper>
       </body>
     </html>
