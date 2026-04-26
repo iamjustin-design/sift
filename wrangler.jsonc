@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "sift2",
+  "name": "sift",
   "compatibility_date": "2026-04-26",
   "compatibility_flags": [
     "nodejs_compat"
