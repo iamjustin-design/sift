@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    const stack = err instanceof Error ? err.stack : "";
     const statusMap: Record<string, number> = {
       INVALID_URL: 400,
       FETCH_FAILED: 502,
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
       TIMEOUT: 504,
     };
     return NextResponse.json(
-      { error: message, code: message } as SiftError,
+      { error: message, code: message, stack } as SiftError & { stack?: string },
       { status: statusMap[message] || 500 }
     );
   }
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    const stack = err instanceof Error ? err.stack : "";
     const statusMap: Record<string, number> = {
       INVALID_URL: 400,
       FETCH_FAILED: 502,
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
       TIMEOUT: 504,
     };
     return NextResponse.json(
-      { error: message, code: message } as SiftError,
+      { error: message, code: message, stack } as SiftError & { stack?: string },
       { status: statusMap[message] || 500 }
     );
   }
