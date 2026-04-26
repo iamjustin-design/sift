@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { SiftResult, SiftError } from "@/lib/parser/types";
+import { useSiftBot } from "@/lib/bot/context";
 import { SourceBar } from "@/components/result/SourceBar";
 import { ArticleBody } from "@/components/result/ArticleBody";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -15,6 +16,7 @@ function SiftContent() {
   const [result, setResult] = useState<SiftResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { setBotState, setCurrentUrl, addMessage, messages } = useSiftBot();
 
   useEffect(() => {
     if (!url) { setError("No URL provided"); setLoading(false); return; }
@@ -34,6 +36,11 @@ function SiftContent() {
         }
         const data: SiftResult = await res.json();
         setResult(data);
+        setBotState("collapsed");
+        setCurrentUrl(url);
+        if (messages.length === 0) {
+          addMessage("bot", "Here's your sifted content! Ask me to adjust anything.");
+        }
       } catch {
         setError("Network error — please try again");
       } finally {
@@ -76,7 +83,7 @@ function SiftContent() {
       <div className="max-w-3xl mx-auto px-5 py-8">
         <div className="flex items-center justify-between mb-4">
           <Link href="/" className="text-sift-gold hover:text-sift-gold-dark font-semibold text-sm flex items-center gap-1">
-            <span>&larr;</span> Sift
+            <span>&larr;</span> BitSift
           </Link>
           <div className="flex items-center gap-2">
             <UserMenu />

@@ -26,3 +26,23 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* Bot animations */
+@keyframes bot-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(184, 134, 11, 0.4); }
+  50% { transform: scale(1.05); box-shadow: 0 0 16px 4px rgba(184, 134, 11, 0.2); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-bot-pulse {
+  animation: bot-pulse 3s ease-in-out infinite;
+  border-radius: 9999px;
+}
+
+@utility animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
