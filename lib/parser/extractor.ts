@@ -1,3 +1,5 @@
+import { parseHTML } from "linkedom";
+import { Readability } from "@mozilla/readability";
 import { extractMeta } from "./meta-extractor";
 import { fetchUrl } from "./fetcher";
 import { SiftResult } from "./types";
@@ -5,21 +7,14 @@ import { SiftResult } from "./types";
 export async function siftUrl(url: string): Promise<SiftResult> {
   const fetched = await fetchUrl(url);
 
-  // Dynamic imports required: jsdom transitively depends on an ESM-only module
-  // (@asamuzakjp/css-color) that uses top-level await, which CJS bundlers can't
-  // statically require. Dynamic import() lets Node load it as ESM at runtime.
-  const { JSDOM } = await import("jsdom");
-  const { Readability } = await import("@mozilla/readability");
-
-  const dom = new JSDOM(fetched.html, { url: fetched.url });
-  const doc = dom.window.document;
+  const { document: doc } = parseHTML(fetched.html);
 
   // Extract meta before Readability mutates the DOM
-  const meta = extractMeta(doc, fetched.url);
+  const meta = extractMeta(doc as unknown as Document, fetched.url);
 
-  // Clone doc for Readability (it modifies the DOM)
-  const readerDom = new JSDOM(fetched.html, { url: fetched.url });
-  const reader = new Readability(readerDom.window.document);
+  // Clone for Readability (it modifies the DOM)
+  const { document: readerDoc } = parseHTML(fetched.html);
+  const reader = new Readability(readerDoc as unknown as Document);
   const article = reader.parse();
 
   if (!article) {

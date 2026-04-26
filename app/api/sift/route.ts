@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { siftUrl } from "@/lib/parser/extractor";
 import { SiftError } from "@/lib/parser/types";
 
-// Force Node.js runtime (jsdom requires eval which edge runtime blocks)
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
