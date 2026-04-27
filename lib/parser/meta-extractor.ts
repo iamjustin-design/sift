@@ -21,7 +21,7 @@ export function extractMeta(doc: Document, url: string): ArticleMeta {
   }
 
   return {
-    title: getMeta("og:title") || doc.querySelector("title")?.textContent?.trim() || "",
+    title: doc.querySelector("title")?.textContent?.trim() || getMeta("og:title") || "",
     description: getMeta("og:description") || getMeta("description"),
     author: getMeta("author") || getMeta("article:author"),
     publishedDate: getMeta("article:published_time") || getMeta("date") || "",
