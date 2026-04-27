@@ -6,6 +6,7 @@ import { SiftResult, SiftError } from "@/lib/parser/types";
 import { useSiftBot } from "@/lib/bot/context";
 import { SourceBar } from "@/components/result/SourceBar";
 import { ArticleBody } from "@/components/result/ArticleBody";
+import { PrintButton } from "@/components/result/PrintButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/auth/UserMenu";
 import Link from "next/link";
@@ -80,12 +81,13 @@ function SiftContent() {
 
   return (
     <div className="min-h-screen bg-surface-light dark:bg-surface-dark">
-      <div className="max-w-3xl mx-auto px-5 py-8">
-        <div className="flex items-center justify-between mb-4">
+      <div className="max-w-4xl mx-auto px-5 py-8">
+        <div className="flex items-center justify-between mb-4 print:hidden">
           <Link href="/" className="text-sift-gold hover:text-sift-gold-dark font-semibold text-sm flex items-center gap-1">
             <span>&larr;</span> BitSift
           </Link>
           <div className="flex items-center gap-2">
+            <PrintButton />
             <UserMenu />
             <ThemeToggle />
           </div>
