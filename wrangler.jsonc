@@ -16,6 +16,13 @@
       "service": "sift"
     }
   ],
+  "routes": [
+    {
+      "pattern": "bitsift.app",
+      "zone_name": "bitsift.app",
+      "custom_domain": true
+    }
+  ],
   "images": {
     "binding": "IMAGES"
   },
