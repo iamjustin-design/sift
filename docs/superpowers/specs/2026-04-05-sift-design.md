@@ -217,7 +217,7 @@ Analyze the text for patterns typical of LLM-generated content:
 
 - **Bookmark Button:** Floating or in the source bar. Requires account. Saves the sifted version.
 
-- **"View Original" Toggle:** Button to temporarily show the original un-sifted page content in a side panel or overlay. Useful for seeing what was removed.
+- **"View Original" Toggle:** Button to temporarily show the original un-sifted page content in a side panel or overlay. Useful for seeing what was removed. **Promoted to Phase C as the entry point for Sift Edits** — see `2026-04-10-bitsift-bot-rebrand-design.md` (Sift Edits section).
 
 ### Themes
 
@@ -295,7 +295,6 @@ Analyze the text for patterns typical of LLM-generated content:
 ## Future Roadmap (v2+)
 
 - **Custom theming:** User-configurable colors, fonts, spacing for sifted results
-- **Draw-to-include / Draw-to-exclude:** User draws a box or shape on the original page to manually include or exclude content from the sifted result. Requires a toggle to temporarily show the un-sifted original.
 - **AI detection for media:** Image AI detection (GAN artifacts, metadata analysis), audio deepfake detection, video synthesis detection
 - **Custom AI model:** Train/fine-tune a purpose-built classifier for better accuracy without external API costs
 - **Multi-page sifting:** Handle paginated articles (fetch all pages, combine)

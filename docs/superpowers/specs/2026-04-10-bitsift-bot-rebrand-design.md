@@ -149,10 +149,14 @@ If Approach B (sanitized snapshot iframe) doesn't work well for a given site:
 
 **Client usage:**
 ```typescript
-// Load snapshot in a same-origin iframe via srcdoc or blob URL
+// Load snapshot in a same-origin iframe via blob URL.
+// srcdoc was considered but rejected: browsers cap srcdoc at ~64KB-2MB and real
+// news/recipe pages routinely exceed that. Blob URLs handle any size cleanly.
+const blob = new Blob([sanitizedHtml], { type: 'text/html' });
+const url = URL.createObjectURL(blob);
 const iframe = document.createElement('iframe');
-iframe.srcdoc = sanitizedHtml;
-// Now we have full DOM access for animations
+iframe.src = url;
+// Same-origin, full DOM access. Revoke URL with URL.revokeObjectURL() on unmount.
 ```
 
 ### Keeper Element Mapping
@@ -198,7 +202,8 @@ The extraction pipeline tags keeper elements during the Readability pass:
 |--------|-------------|
 | Just images | Filters display to only show extracted images |
 | Extract links | Shows a list of all links found in the content |
-| Show original | Opens the snapshot iframe again (or links to the original URL) |
+| Show original | Toggles the sifted view to the snapshot iframe (entry point to Sift Edits — see below) |
+| Edit | Enables tap-to-remove on sifted view + tap-to-add-back on original view |
 | Re-sift | Re-runs the extraction with fresh fetch |
 
 ## LLM Chat Integration
@@ -219,8 +224,8 @@ The extraction pipeline tags keeper elements during the Readability pass:
 ```typescript
 {
   reply: string;          // Human-readable bot response
-  action?: string;        // "filter" | "extract" | "re-sift" | "adjust" | "none"
-  params?: Record<string, any>;  // Action-specific parameters
+  action?: string;        // "filter" | "extract" | "re-sift" | "adjust" | "edit-add" | "edit-remove" | "show-original" | "none"
+  params?: Record<string, any>;  // Action-specific parameters (see Sift Edits below for edit-* shapes)
 }
 ```
 
@@ -246,6 +251,7 @@ Candidate models (pick during implementation based on cost/quality/speed):
 > - Filter by content type (images, links, tables, headings)
 > - Adjust the display layout
 > - Explain what was extracted and what was removed
+> - Edit the sifted result: add removed sections back, or remove sections that the sifter kept
 > - Re-sift with different parameters
 >
 > You CANNOT:
@@ -254,6 +260,8 @@ Candidate models (pick during implementation based on cost/quality/speed):
 > - Help with anything unrelated to sifting
 >
 > If asked something off-topic, respond: "I'm built for sifting! Ask me to extract, filter, or adjust the current page."
+>
+> When the user asks to add or remove a section, you will be given a manifest of available section IDs with brief labels (the "edit manifest"). Pick the matching IDs and return them in the `params.ids` array on an `edit-add` or `edit-remove` action.
 >
 > Respond concisely. Return a structured action when the user's request maps to one.
 
@@ -264,7 +272,108 @@ The client interprets the LLM's structured response:
 - `action: "extract"` → pull specific section from siftedContent and display
 - `action: "re-sift"` → call `/api/sift` again with modified parameters
 - `action: "adjust"` → change layout/display options
+- `action: "edit-add"` → apply additions to the editSet, re-render (see Sift Edits below)
+- `action: "edit-remove"` → apply removals to the editSet, re-render (see Sift Edits below)
+- `action: "show-original"` → toggle the result page into snapshot view
 - `action: "none"` → just display the reply text (informational response)
+
+## Sift Edits
+
+The sifter is good but not perfect. Sometimes Readability drops a paragraph the user wanted, or keeps a "related stories" block the user didn't. **Sift Edits** lets the user fix the result without a full re-sift, either by tapping directly on the page or by asking the chat.
+
+### User-facing behavior
+
+Two surfaces, one underlying state:
+
+**1. Tap-to-edit on the sifted view**
+- A small "Edit" toggle in the chat panel quick actions (or in the result page header) puts the sifted view into edit mode
+- Hovering any block element (paragraph, image, list, blockquote, heading) shows a thin red dashed outline + a "Remove" tooltip
+- Click → element fades out and is added to the user's edit set as a removal
+- An undo pill appears bottom-center for ~5s ("Removed paragraph. Undo?")
+
+**2. Tap-to-add-back on the original view**
+- "Show original" quick action (or the chat command) toggles the result page from clean layout to the snapshot iframe
+- In edit mode, the snapshot is rendered with kept elements outlined in gold (already produced by Phase B's keeperSelectors), and **non-kept elements** ghosted (50% opacity) with a thin gray dashed outline
+- Hovering a ghosted element shows a "+ Add back" tooltip
+- Click → element gets a gold outline (now a keeper) and is added to the edit set as an addition
+- "Done editing" button toggles back to clean layout, now showing the result with the user's edits applied
+
+**3. Chat-driven edits (same edit set)**
+- "remove the byline" → LLM picks the matching `data-sift-id` from the edit manifest, returns `edit-remove` with that ID
+- "put the comments section back" → LLM picks the matching ID, returns `edit-add`
+- The bot replies in plain language: "Removed the byline." / "Added the comments section back."
+
+All three surfaces mutate the same `editSet`. The clean layout is re-rendered from `keeperSelectors ∪ editSet.adds − editSet.removes` whenever the set changes.
+
+### Edit Manifest (for the LLM)
+
+When the user opens the chat, the client constructs an **edit manifest** from the snapshot DOM:
+
+```typescript
+interface EditManifestEntry {
+  id: string;             // data-sift-id
+  kept: boolean;          // is it currently in the sifted result?
+  tag: string;            // p, h2, ul, img, blockquote, etc.
+  label: string;          // first ~80 chars of textContent (or alt text for images)
+}
+
+interface EditManifest {
+  entries: EditManifestEntry[];
+}
+```
+
+The manifest is sent on each `/api/sift/chat` call as part of `siftedContent` (or as a sibling field). It gives the LLM the vocabulary it needs to map free-form requests ("remove the byline", "add the comments back") to specific `data-sift-id` values.
+
+**Token-cost mitigation:** for long pages (1000+ block elements), the manifest is truncated to the kept elements + the first N non-kept elements with high textContent length. Full manifest is available on demand via a follow-up tool call (future).
+
+### Edit Set State
+
+The edit set lives in `SiftBotProvider` context:
+
+```typescript
+interface EditSet {
+  adds: string[];     // data-sift-ids of non-keepers the user wants included
+  removes: string[];  // data-sift-ids of keepers the user wants excluded
+}
+```
+
+It's per-sift-session in v1 (resets on new URL). Future: persist to the DB as part of the bookmarks table for logged-in users so a curated sift can be saved and re-opened.
+
+### Action Param Shapes
+
+```typescript
+// edit-add
+{ action: "edit-add", params: { ids: string[] } }
+
+// edit-remove
+{ action: "edit-remove", params: { ids: string[] } }
+
+// show-original (no params, just toggles the view)
+{ action: "show-original" }
+```
+
+### Re-render Pipeline
+
+When `editSet` changes, the result page re-renders:
+1. Start from `keeperSelectors` (the original sift)
+2. Subtract `editSet.removes`
+3. Add `editSet.adds`, sourced from the snapshot iframe DOM by `data-sift-id`
+4. Run the same cleanup pass (`cleanup.ts`) on the new HTML — handles relative URLs, picture fallbacks, etc.
+5. Update `ArticleBody` content via React state
+
+### Dependencies
+
+This feature depends entirely on Phase B:
+- The snapshot iframe (so we have the original DOM in-process and same-origin)
+- The `data-sift-id` attribute scheme (so adds/removes have stable identifiers)
+- The `keeperSelectors` array (so we know what was originally kept)
+
+It can ship as part of Phase C (LLM Chat) or as a Phase B+ slice immediately after the snapshot work, since the tap-to-edit surfaces don't strictly need an LLM — they're DOM event handlers. Recommended order:
+1. Phase B builds snapshot + keeperSelectors + cleanup of the snapshot loader
+2. **Sift Edits Slice 1 (no LLM):** edit set state, tap-to-remove, tap-to-add-back, undo pill, re-render pipeline
+3. **Sift Edits Slice 2 (with LLM):** edit manifest construction, chat-driven `edit-add`/`edit-remove`, plain-language replies
+
+This way users get the manual editing UX shipped before the LLM piece is wired up.
 
 ## Page Structure & Routing
 
@@ -333,12 +442,19 @@ components/
     ContentReflow.tsx           ← NEW: pick & place into clean layout
 lib/
   bot/
-    types.ts                    ← NEW: bot state, chat message, action types
-    context.ts                  ← NEW: SiftBotProvider React context
+    types.ts                    ← NEW: bot state, chat message, action types, EditSet, EditManifest
+    context.ts                  ← NEW: SiftBotProvider React context (now also holds editSet)
     chat-provider.ts            ← NEW: LLM provider interface
+    edit-state.ts               ← NEW (Phase C): editSet reducer, manifest builder, re-render helpers
   parser/
     snapshot.ts                 ← NEW: HTML sanitization pipeline
     keeper-mapper.ts            ← NEW: map Readability output to DOM selectors
+components/
+  edit/
+    EditModeToggle.tsx          ← NEW (Phase C): toggle button for tap-to-edit surfaces
+    RemoveOverlay.tsx           ← NEW (Phase C): hover/click handlers on sifted view
+    AddBackOverlay.tsx          ← NEW (Phase C): hover/click handlers on snapshot view
+    UndoPill.tsx                ← NEW (Phase C): bottom-center undo for last edit
 ```
 
 ## Technical Considerations
@@ -386,12 +502,14 @@ This rebrand is a large change. Recommended build order:
 - Build `PagePeel` transition
 - URL ingestion animation
 
-### Phase C: LLM Chat
+### Phase C: LLM Chat + Sift Edits
 - Build `/api/sift/chat` endpoint
 - Integrate LLM provider
 - Wire chat panel to endpoint
 - Quick actions → structured commands
 - Guardrails and rate limiting
+- **Sift Edits Slice 1 (no LLM):** edit set state, tap-to-remove on sifted view, tap-to-add-back on original view, undo pill, edit-aware re-render pipeline
+- **Sift Edits Slice 2 (with LLM):** edit manifest construction, `edit-add`/`edit-remove`/`show-original` action handling, plain-language replies
 
 ### Phase D: Polish
 - Swap in Nico's mascot design
