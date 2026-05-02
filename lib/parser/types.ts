@@ -19,6 +19,7 @@ export interface SiftResult {
   sourceDomain: string;
   siftedAt: string;      // ISO timestamp
   fetchTimeMs: number;
+  keeperSelectors: string[]; // data-sift-id values that survived Readability
 }
 
 export interface SiftError {

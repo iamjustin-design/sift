@@ -5,6 +5,8 @@ import { fetchUrl } from "./fetcher";
 import { cleanupContent } from "./cleanup";
 import { extractRecipe, recipeToHtml, RecipeData } from "./recipe-extractor";
 import { cleanTitle, pickBestTitle } from "./title-cleaner";
+import { tagBlockElements } from "./sift-tagger";
+import { extractKeeperIds } from "./keeper-mapper";
 import { SiftResult } from "./types";
 
 function recipeTextContent(recipe: RecipeData): string {
@@ -21,7 +23,11 @@ function recipeTextContent(recipe: RecipeData): string {
 export async function siftUrl(url: string): Promise<SiftResult> {
   const fetched = await fetchUrl(url);
 
-  const { document: doc } = parseHTML(fetched.html);
+  // Tag once. Both downstream parses use the tagged HTML so data-sift-id
+  // values are stable and survive Readability's DOM mutations.
+  const taggedHtml = tagBlockElements(fetched.html);
+
+  const { document: doc } = parseHTML(taggedHtml);
   const meta = extractMeta(doc as unknown as Document, fetched.url);
 
   const rawTitleTag =
@@ -29,9 +35,9 @@ export async function siftUrl(url: string): Promise<SiftResult> {
   const rawOgTitle =
     doc.querySelector('meta[property="og:title"]')?.getAttribute("content")?.trim() || "";
 
-  const recipe = extractRecipe(fetched.html);
+  const recipe = extractRecipe(taggedHtml);
 
-  const { document: readerDoc } = parseHTML(fetched.html);
+  const { document: readerDoc } = parseHTML(taggedHtml);
   const reader = new Readability(readerDoc as unknown as Document);
   const article = reader.parse();
 
@@ -81,6 +87,10 @@ export async function siftUrl(url: string): Promise<SiftResult> {
     ? textContent.split(/\s+/).filter((w) => w.length > 0).length
     : 0;
 
+  // Recipe pages produce synthetic HTML with no data-sift-id values, so the
+  // keeperSelectors are empty for them. Sift Edits is non-recipe-only in v1.
+  const keeperSelectors = recipe ? [] : extractKeeperIds(article!.content ?? "");
+
   return {
     meta,
     content,
@@ -91,5 +101,6 @@ export async function siftUrl(url: string): Promise<SiftResult> {
     sourceDomain,
     siftedAt: new Date().toISOString(),
     fetchTimeMs: fetched.fetchTimeMs,
+    keeperSelectors,
   };
 }
