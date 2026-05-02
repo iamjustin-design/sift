@@ -7,7 +7,7 @@ import { ChatMessage } from "./ChatMessage";
 import { QuickActions } from "./QuickActions";
 
 export function ChatPanel() {
-  const { chatOpen, setChatOpen, messages, addMessage, currentUrl } = useSiftBot();
+  const { chatOpen, setChatOpen, messages, addMessage, currentUrl, setSnapshotOpen } = useSiftBot();
   const [input, setInput] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -34,6 +34,13 @@ export function ChatPanel() {
   };
 
   const handleQuickAction = (action: string) => {
+    if (action === "original") {
+      setSnapshotOpen(true);
+      setChatOpen(false);
+      addMessage("user", "Show original");
+      addMessage("bot", "Showing the original page. Click \"Back to sifted\" to return.");
+      return;
+    }
     addMessage("user", `Quick action: ${action}`);
     setTimeout(() => {
       addMessage("bot", `The "${action}" feature is coming in a future update!`);

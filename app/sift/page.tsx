@@ -9,6 +9,7 @@ import { ArticleBody } from "@/components/result/ArticleBody";
 import { PrintButton } from "@/components/result/PrintButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/auth/UserMenu";
+import { SnapshotIframe } from "@/components/animation/SnapshotIframe";
 import Link from "next/link";
 
 function SiftContent() {
@@ -17,7 +18,8 @@ function SiftContent() {
   const [result, setResult] = useState<SiftResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { setBotState, setCurrentUrl, addMessage, messages } = useSiftBot();
+  const { setBotState, setCurrentUrl, addMessage, messages, snapshotOpen, setSnapshotOpen } = useSiftBot();
+  const [snapshotHtml, setSnapshotHtml] = useState<string | null>(null);
 
   useEffect(() => {
     if (!url) { setError("No URL provided"); setLoading(false); return; }
@@ -49,7 +51,23 @@ function SiftContent() {
       }
     };
 
+    const fetchSnapshot = async () => {
+      try {
+        const res = await fetch("/api/sift/snapshot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        if (!res.ok) return;
+        const data: { html: string } = await res.json();
+        setSnapshotHtml(data.html);
+      } catch {
+        // Snapshot is non-critical; ignore failures silently in v1.
+      }
+    };
+
     fetchSift();
+    fetchSnapshot();
   }, [url]);
 
   if (loading) {
@@ -102,6 +120,12 @@ function SiftContent() {
           wordCount={result.wordCount}
         />
       </div>
+      {snapshotOpen && (
+        <SnapshotIframe
+          html={snapshotHtml}
+          onClose={() => setSnapshotOpen(false)}
+        />
+      )}
     </div>
   );
 }

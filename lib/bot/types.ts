@@ -26,4 +26,6 @@ export interface SiftBotContextType {
   addMessage: (role: "bot" | "user", content: string) => void;
   currentUrl: string | null;
   setCurrentUrl: (url: string | null) => void;
+  snapshotOpen: boolean;
+  setSnapshotOpen: (open: boolean) => void;
 }

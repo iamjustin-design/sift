@@ -13,6 +13,8 @@ const SiftBotContext = createContext<SiftBotContextType>({
   addMessage: () => {},
   currentUrl: null,
   setCurrentUrl: () => {},
+  snapshotOpen: false,
+  setSnapshotOpen: () => {},
 });
 
 export function useSiftBot() {
@@ -27,6 +29,7 @@ export function SiftBotProvider({ children }: { children: React.ReactNode }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [snapshotOpen, setSnapshotOpen] = useState(false);
 
   const addMessage = useCallback((role: "bot" | "user", content: string) => {
     setMessages((prev) => [
@@ -69,6 +72,8 @@ export function SiftBotProvider({ children }: { children: React.ReactNode }) {
         addMessage,
         currentUrl,
         setCurrentUrl,
+        snapshotOpen,
+        setSnapshotOpen,
       }}
     >
       {children}
