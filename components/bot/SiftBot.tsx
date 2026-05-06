@@ -34,7 +34,9 @@ export function SiftBot() {
         className="fixed bottom-4 right-4 z-50 cursor-pointer animate-bot-pulse print:hidden"
         aria-label="Open BitSift Bot chat"
       >
-        <BotAvatar size={52} />
+        <span className="block animate-bot-bob">
+          <BotAvatar size={52} />
+        </span>
       </button>
       <ChatPanel />
     </>

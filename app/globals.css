@@ -29,20 +29,76 @@
 
 /* Bot animations */
 @keyframes bot-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(184, 134, 11, 0.4); }
-  50% { transform: scale(1.05); box-shadow: 0 0 16px 4px rgba(184, 134, 11, 0.2); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184, 134, 11, 0); }
+  50%      { box-shadow: 0 0 18px 4px rgba(184, 134, 11, 0.18); }
+}
+
+@keyframes bot-idle-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-3px) rotate(-1.5deg); }
+  50%      { transform: translateY(0)    rotate(0deg); }
+  75%      { transform: translateY(-2px) rotate(1.5deg); }
 }
 
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes article-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @utility animate-bot-pulse {
-  animation: bot-pulse 3s ease-in-out infinite;
+  /* Pulse halo on the wrapper, gentle bob on the inner mascot */
+  animation: bot-pulse 3.4s ease-in-out infinite;
   border-radius: 9999px;
+}
+
+@utility animate-bot-bob {
+  animation: bot-idle-bob 4.2s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
 }
 
 @utility animate-slide-up {
   animation: slide-up 0.25s ease-out;
+}
+
+@utility animate-article-rise {
+  animation: article-rise 0.45s ease-out 0.1s both;
+}
+
+/* Bot edit: "no images" hides hero, inline images, picture, figure */
+.sift-no-images .article-hero-image,
+.sift-no-images img,
+.sift-no-images picture,
+.sift-no-images figure,
+.sift-no-images svg {
+  display: none !important;
+}
+
+/* Edit mode: tap-to-remove affordance */
+.sift-edit-mode [data-sift-id] {
+  cursor: pointer;
+  transition: outline-color 0.12s, background-color 0.12s;
+  outline: 2px dashed transparent;
+  outline-offset: 4px;
+}
+@media (hover: hover) {
+  .sift-edit-mode [data-sift-id]:hover {
+    outline-color: #d4a017;
+    background-color: rgba(212, 160, 23, 0.06);
+  }
+}
+/* Touch devices have no hover state — show the affordance permanently in edit
+   mode so users can see what's tappable without dragging a finger across. */
+@media (hover: none) {
+  .sift-edit-mode [data-sift-id] {
+    outline-color: rgba(212, 160, 23, 0.55);
+  }
+}
+.sift-edit-mode a {
+  pointer-events: none;
 }

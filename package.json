@@ -13,6 +13,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.94.0",
     "@auth/prisma-adapter": "^2.11.1",
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^1.0.2",

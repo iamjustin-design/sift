@@ -23,14 +23,28 @@ function wordCount(s: string): number {
   return s.trim().split(/\s+/).filter(Boolean).length;
 }
 
-export function cleanTitle(title: string, siteName: string, isRecipePage: boolean): string {
+export function cleanTitle(
+  title: string,
+  siteName: string | string[],
+  isRecipePage: boolean
+): string {
   if (!title) return "";
   let cleaned = title.trim();
 
-  // Strip trailing site-name suffix: " - Site Name", " | Site Name", " — Site Name", " : Site Name"
-  if (siteName) {
-    const escaped = escapeRegex(siteName);
+  // Strip trailing site-name suffix: " - Site Name", " | Site Name", " — Site Name", " : Site Name".
+  // Accepts multiple candidates because og:site_name often differs from how the
+  // brand appears in the <title> (Wikipedia: og:site_name="Wikimedia Foundation, Inc."
+  // but title is "<topic> - Wikipedia"). Try each candidate; first hit wins.
+  const candidates = Array.isArray(siteName)
+    ? siteName.filter(Boolean)
+    : siteName
+      ? [siteName]
+      : [];
+  for (const cand of candidates) {
+    const escaped = escapeRegex(cand);
+    const before = cleaned;
     cleaned = cleaned.replace(new RegExp(`\\s*[-|:—–]\\s*${escaped}\\s*$`, "i"), "").trim();
+    if (cleaned !== before) break;
   }
 
   // Strip trailing " Recipe" (with or without trailing parenthetical) on recipe pages.

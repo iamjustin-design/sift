@@ -9,6 +9,12 @@ export interface ArticleMeta {
   ogType: string;
 }
 
+export interface EditManifestEntry {
+  id: string;
+  tag: string;
+  label: string;
+}
+
 export interface SiftResult {
   meta: ArticleMeta;
   content: string;       // cleaned HTML content
@@ -20,6 +26,7 @@ export interface SiftResult {
   siftedAt: string;      // ISO timestamp
   fetchTimeMs: number;
   keeperSelectors: string[]; // data-sift-id values that survived Readability
+  editManifest: EditManifestEntry[]; // visible block elements with labels for LLM targeting
 }
 
 export interface SiftError {

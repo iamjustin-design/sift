@@ -76,9 +76,11 @@ export function cleanupContent(html: string, baseUrl: string, title: string): st
     if (bestUrl) {
       const innerImg = picture.querySelector("img");
       const alt = innerImg?.getAttribute("alt") || "";
+      const siftId = innerImg?.getAttribute("data-sift-id") || picture.getAttribute("data-sift-id") || "";
       const replacement = document.createElement("img");
       replacement.setAttribute("src", resolveUrl(bestUrl, baseUrl));
       if (alt) replacement.setAttribute("alt", alt);
+      if (siftId) replacement.setAttribute("data-sift-id", siftId);
       picture.replaceWith(replacement);
     } else {
       picture.remove();

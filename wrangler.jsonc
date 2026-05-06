@@ -23,9 +23,6 @@
       "custom_domain": true
     }
   ],
-  "images": {
-    "binding": "IMAGES"
-  },
   "observability": {
     "enabled": true
   }

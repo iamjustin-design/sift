@@ -7,6 +7,7 @@ import { extractRecipe, recipeToHtml, RecipeData } from "./recipe-extractor";
 import { cleanTitle, pickBestTitle } from "./title-cleaner";
 import { tagBlockElements } from "./sift-tagger";
 import { extractKeeperIds } from "./keeper-mapper";
+import { buildEditManifest } from "./edit-manifest";
 import { SiftResult } from "./types";
 
 function recipeTextContent(recipe: RecipeData): string {
@@ -57,11 +58,30 @@ export async function siftUrl(url: string): Promise<SiftResult> {
   }
 
   const isRecipePage = !!recipe;
+  // Site-name candidates for trailing-suffix stripping. og:site_name often
+  // differs from the brand used in the <title> tag (e.g. Wikipedia uses
+  // "Wikimedia Foundation, Inc." for og:site_name but "Wikipedia" in titles).
+  // Also derive a brand from the hostname.
+  const hostnameBrand = (() => {
+    try {
+      const host = new URL(fetched.url).hostname.replace(/^www\./, "");
+      const parts = host.split(".");
+      if (parts.length >= 2) {
+        const root = parts[parts.length - 2];
+        return root.charAt(0).toUpperCase() + root.slice(1);
+      }
+      return host;
+    } catch {
+      return "";
+    }
+  })();
+  const siteNameCandidates = [meta.siteName, hostnameBrand].filter((s): s is string => !!s);
+
   const titleCandidates = [
     recipe?.name || "",
-    cleanTitle(rawTitleTag, meta.siteName, isRecipePage),
-    cleanTitle(rawOgTitle, meta.siteName, isRecipePage),
-    cleanTitle(article?.title || "", meta.siteName, isRecipePage),
+    cleanTitle(rawTitleTag, siteNameCandidates, isRecipePage),
+    cleanTitle(rawOgTitle, siteNameCandidates, isRecipePage),
+    cleanTitle(article?.title || "", siteNameCandidates, isRecipePage),
   ];
   meta.title = pickBestTitle(titleCandidates) || meta.title;
 
@@ -88,8 +108,10 @@ export async function siftUrl(url: string): Promise<SiftResult> {
     : 0;
 
   // Recipe pages produce synthetic HTML with no data-sift-id values, so the
-  // keeperSelectors are empty for them. Sift Edits is non-recipe-only in v1.
+  // keeperSelectors and editManifest are empty for them. Sift Edits is
+  // non-recipe-only in v1.
   const keeperSelectors = recipe ? [] : extractKeeperIds(article!.content ?? "");
+  const editManifest = recipe ? [] : buildEditManifest(content);
 
   return {
     meta,
@@ -102,5 +124,6 @@ export async function siftUrl(url: string): Promise<SiftResult> {
     siftedAt: new Date().toISOString(),
     fetchTimeMs: fetched.fetchTimeMs,
     keeperSelectors,
+    editManifest,
   };
 }
